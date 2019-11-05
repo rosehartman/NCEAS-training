@@ -1,6 +1,6 @@
 #here is some R script stuff
 
-x = 5
+x = 10
 
 y = 67
 
