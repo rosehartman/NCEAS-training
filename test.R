@@ -6,4 +6,4 @@ y = 67
 
 z = x + y
 
-print(z)
+print(x)
