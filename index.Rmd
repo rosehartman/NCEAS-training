@@ -21,8 +21,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 I can add HTML right into the markdown chunk
 
+you can aldo add the image in markdown
+![](skt_dsm_fig.png)
 
-<img src = "skt_dsm_fig.png" class = "displayleft" alt = "this is a graph of the spring kodiak trawl index" />
+<style type="text/css">
+.centerImage
+{
+ text-align:center;
+ display:block;
+}
+</style>
+
+<img src = "skt_dsm_fig.png" class = "centerImage" alt = "this is a graph of the spring kodiak trawl index" width = "200" />
 
 If I want to write a comment in HTML, I need to type "<!" and then "--" with "--" and ">" at the end
 <!--like this -->
@@ -30,7 +40,7 @@ If I want to write a comment in HTML, I need to type "<!" and then "--" with "--
 Or I can just put my comments in a code chunk and use comments. 
 
 
-```{r, fig.align= "center", echo = F}
-include_graphics("skt_dsm_fig.png")
+```{r, fig.align= "center", echo = F, fig.width= 1, fig.subcap= "some text", out.width= "50"}
+include_graphics("http://water.ca.gov/-/media/DWR-Website/Web-Pages/Programs/Environmental-Services/Interagency-Ecological-Program/Images/iep_logo4.jpg")
 ```
 
