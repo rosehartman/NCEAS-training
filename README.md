@@ -5,9 +5,12 @@ Testing stuff that I edit in Rstudio and sstuff
 
 here is some stuff
 
-# random list
 
-- apples
-- banannas
-- cheese
+Here is a list for Rosie to review:
 
+-apples
+-oranges
+-bananas
+-cheese
+
+Changes have been merged
