@@ -12,6 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Synthesis is awesome
 
+## Danica's new section. 
+
+Here is some text explaining this section. 
+
 ## I've done a lot of work
 
 - [Redbluff fish graph](Redbluff.html)
