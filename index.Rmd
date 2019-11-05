@@ -17,3 +17,6 @@ knitr::opts_chunk$set(echo = TRUE)
 - Dave's longfin graph
 - Dave's sturgeon graph
 - Lara's SKT graphs
+
+I can add HTML right into the markdown chunk
+<img scr = "skt_dsm_fig.png" class = "displayleft" alt = "this is a graph of the spring kodiak trawl index" />
