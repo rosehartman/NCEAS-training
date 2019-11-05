@@ -5,3 +5,8 @@ Testing stuff that I edit in Rstudio
 
 here is some stuff
 
+Here is a list for Rosie to review:
+
+-apples
+-oranges
+-bananas
