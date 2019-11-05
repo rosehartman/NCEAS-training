@@ -6,6 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -22,3 +23,14 @@ I can add HTML right into the markdown chunk
 
 
 <img src = "skt_dsm_fig.png" class = "displayleft" alt = "this is a graph of the spring kodiak trawl index" />
+
+If I want to write a comment in HTML, I need to type "<!" and then "--" with "--" and ">" at the end
+<!--like this -->
+
+Or I can just put my comments in a code chunk and use comments. 
+
+
+```{r, fig.align= "center", echo = F}
+include_graphics("skt_dsm_fig.png")
+```
+
