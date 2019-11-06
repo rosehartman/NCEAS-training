@@ -1,0 +1,57 @@
+---
+title: "functions"
+author: "Rosemary Hartman"
+date: "11/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(roxygen2)
+```
+```{r}
+airtemps = c(212, 30, 78, 32)
+
+celcius = (airtemps[1] - 32)* 5/9
+
+```
+
+```{r}
+fahr2cel = function(fahr) {
+  celcius = (fahr-32) * 5/9
+return(celcius)
+  }
+```
+
+```{r}
+celf = fahr2cel(airtemps)
+celf
+
+```
+
+
+now convert back to fahrenheight
+
+```{r}
+#i'm learining about Roxygen comments
+
+
+#' Converts Celcius to Fahrenheit temperatures
+#'
+#' This would normally be the more detailed section of the documentation
+#' but we don't really need it for this really simple fucntion
+#' @param cel the temperature in degrees Celcius to be converted
+#' @return the temperature in fahrenheit
+
+cel2far = function(cel){
+  far = cel*9/5 + 32
+  return(far)
+}
+
+airtemp2 = cel2far(celf)
+airtemp2
+
+airtemps == airtemp2
+
+```
+
