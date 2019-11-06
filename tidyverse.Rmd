@@ -1,0 +1,173 @@
+---
+title: "Data tidying"
+author: "Rosemary Hartman"
+date: "11/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning = F, message = F}
+
+library(dplyr)
+library(tidyr)
+
+```
+
+
+# Read and clean data
+
+```{r}
+#read in the data
+catch_origional = read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.302.1", method = "libcurl"), stringsAsFactors = F)
+
+#check out the data
+head(catch_origional)
+
+```
+Remove "all" and "notes" colomnes because i don't need them
+```{r}
+catch_data = catch_origional %>% 
+  #select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum)
+select(-All, -notesRegCode)
+
+
+head(catch_data)
+```
+
+```{r}
+summary(catch_data)
+```
+
+## Fix Chinook Column
+
+Use "mutate" to fix Chinook column
+
+```{r}
+catch_clean = catch_data %>% 
+  mutate(Chinook = as.numeric(Chinook))
+
+summary(catch_clean)
+```
+
+Find the row that turned into NA
+
+```{r}
+i = which(is.na(catch_clean$Chinook))
+i
+
+catch_origional[401,]
+
+```
+
+```{r}
+catch_clean = catch_data %>% 
+  mutate(Chinook = ifelse(Chinook == "I", 1, Chinook)) %>%
+  mutate(Chinook = as.numeric(Chinook))
+```
+
+
+# Reshape data
+
+```{r}
+catch_long = catch_clean %>% 
+  pivot_longer(cols = -c(Region, Year), names_to = "species", values_to = "count")
+
+head(catch_long)
+```
+
+Now I"ll move it back to wide format
+```{r}
+catch_wide = catch_long %>% 
+  pivot_wider(names_from = Year, values_from = count)
+
+head(catch_wide)
+
+```
+
+Data are actually in thousands of fish, so I'll rename the variable
+
+```{r}
+catch_long = catch_long %>% 
+  rename(catch_thousands = count) %>% 
+  mutate(catch = catch_thousands*1000) %>% 
+  select(-catch_thousands)
+
+head(catch_long)
+
+```
+# SUmmarize table.
+
+```{r}
+mean_region = catch_long %>% 
+  group_by(Region, species) %>% 
+  summarize(catch_mean = mean(catch), num_obs = n())
+
+mean_region
+
+total_sp = catch_long %>% 
+  group_by(species) %>% 
+  summarize(catch_sum = sum(catch, na.rm = T), num_obs = n()) %>% 
+  arrange(desc(catch_sum))
+
+total_sp
+```
+```
+
+look at older data 
+```{r}
+total_spearly = catch_long %>% 
+filter(Year <1900) %>%
+  group_by(species) %>% 
+  summarize(catch_sum = sum(catch, na.rm = T), num_obs = n()) %>% 
+  arrange(desc(catch_sum))
+
+total_spearly
+```
+
+
+# Joins
+
+
+```{r}
+region_defs = read.csv(url('https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1', method = "libcurl"), stringsAsFactors = F) %>%
+select(code, mgmtArea) %>%
+rename(Region = code)
+
+head(region_defs)
+
+```
+
+```{r}
+catch_joined = left_join(catch_long, region_defs)
+
+head(catch_joined)
+```
+
+
+
+# Sepaate and unite
+```{r}
+
+
+
+site_codes = data.frame(site = c("HAW-100",
+"HAW-101", "OAH-102", "OAH-103", "MAI-100"), stringsAsFactors = F)
+
+site_codes_split = site_codes %>%
+separate(site, into = c("island", "site_num"), sep = "-", remove = F)
+
+head(site_codes_split)
+
+```
+
+```{r}
+united = site_codes_split %>% 
+unite(unitedcode, island, site_num, remove = F)
+
+head(united)
+
+```
+
