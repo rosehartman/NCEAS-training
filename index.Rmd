@@ -50,4 +50,4 @@ include_graphics("http://water.ca.gov/-/media/DWR-Website/Web-Pages/Programs/Env
 
 <img src = "mountains.jpg" class = "centerImage" alt = "Here is a new image" width = "200" />
 
-<img src = "redbacked.jpg" class = "centerImage" alt = "Red-backed salamanders are magestic denizens of the eastern US" width = "200" />
+<img src = "redbacked.jpg" class = "centerImage" alt = "Red-backed salamanders are magestic denizens of the eastern US"/>
