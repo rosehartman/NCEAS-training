@@ -12,6 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Synthesis is awesome
 
+## Danica's new section. 
+
+Here is some text explaining this section. 
+
 ## I've done a lot of work
 
 - [Redbluff fish graph](Redbluff.html)
@@ -21,7 +25,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 I can add HTML right into the markdown chunk
 
-you can aldo add the image in markdown
+you can also add the image in markdown
 ![](skt_dsm_fig.png)
 
 <style type="text/css">
@@ -44,3 +48,4 @@ Or I can just put my comments in a code chunk and use comments.
 include_graphics("http://water.ca.gov/-/media/DWR-Website/Web-Pages/Programs/Environmental-Services/Interagency-Ecological-Program/Images/iep_logo4.jpg")
 ```
 
+<img src = "mountains.jpg" class = "centerImage" alt = "Here is a new image" width = "200" />
