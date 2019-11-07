@@ -1,0 +1,131 @@
+---
+title: "data visualization"
+author: "Rosemary Hartman"
+date: "11/7/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(leaflet)
+library(scales)
+library(DT)
+library(lubridate)
+```
+
+# Prepare Data
+
+```{r}
+data_url <- "https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3Af119a05b-bbe7-4aea-93c6-85434dcb1c5e"
+
+esc <- tryCatch(
+    read.csv("escapement.csv", stringsAsFactors = FALSE),
+    error=function(cond) {
+        message(paste("Escapement file does not seem to exist, so get it from the KNB."))
+        esc <- read.csv(url(data_url, method = "libcurl"), stringsAsFactors = FALSE)
+        return(esc)
+    }
+)
+
+write.csv(esc, "escapement.csv", row.names = F)
+
+head(esc)
+```
+
+Annual total escapement by Species, Region, and Year
+```{r}
+# %in%
+species = c("Sockeye", "Coho", "Chinook", "Pink", "Chum")
+esc2 = esc %>%
+  filter(Species %in% species) %>%
+  mutate(sampleDate = as.Date(sampleDate)) %>%
+  mutate(Year = year(sampleDate)) %>%
+  group_by(Species, SASAP.Region, Year) %>%
+  summarize(totalesc = sum(DailyCount))
+
+
+```
+
+
+# create static plots
+
+```{r}
+ggplot(esc2, mapping = aes(x = Species, y = totalesc)) + 
+  geom_col(aes(fill = SASAP.Region))
+```
+```{r}
+esc2 %>%
+  filter(SASAP.Region == "Kodiak") %>%
+ggplot(mapping = aes(x = Year, y = totalesc, color = Species)) + 
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = comma)+
+  ylab("Escapement (number of fish)")+
+  ggtitle("Kodiak Salmon Escapement")+
+  theme_bw()
+```
+
+
+```{r, fig.height=8, fig.width=4}
+
+ggplot(esc2, mapping = aes(x = Year, y = totalesc, color = Species)) + 
+  geom_line() +
+  geom_point() +
+  facet_wrap(~SASAP.Region, scales = "free")+
+  scale_y_continuous(labels = comma)+
+  ylab("Escapement (number of fish)")+
+  theme_bw()
+
+#if we want to put multiple plots side by side you need to stick them together with cowplot or 
+#patchwork
+```
+
+# create an interactive table
+
+```{r}
+locations = esc %>%
+  distinct(Location, Latitude, Longitude) %>%
+  drop_na()
+
+datatable(locations)
+
+```
+
+
+# create an interactive map
+
+```{r}
+
+#Default datum is WGS 1984, then reprojected based on whatever the tiles rae
+
+leaflet(locations) %>%
+  addTiles() %>%
+  addMarkers(lng = ~Longitude, lat = ~Latitude, popup = ~Location)
+```
+
+make it fancier
+
+```{r}
+leaflet(locations) %>% 
+  addWMSTiles("https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?",
+              layers = 'GEBCO_LATEST',
+              attribution = "Imagery reproduced from the GEBCO_2014 Grid, version 20150318, www.gebco.net") %>%
+  addCircleMarkers(lng = ~Longitude,
+                   lat = ~Latitude,
+                   popup = ~ Location,
+                   radius = 5,
+                   # set fill properties
+                   fillColor = "salmon",
+                   fillOpacity = 1,
+                   # set stroke properties
+                   stroke = T,
+                   weight = 0.5,
+                   color = "white",
+                   opacity = 1)
+
+```
+
