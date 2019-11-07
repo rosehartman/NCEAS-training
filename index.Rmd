@@ -19,7 +19,7 @@ Here is some text explaining this section.
 ## I've done a lot of work
 
 - [Redbluff fish graph](Redbluff.html)
-- [i'm pretty excited about leaflet](index.Rmd)
+- [i'm pretty excited about leaflet](datavis.html)
 - Dave's sturgeon graph
 - Lara's SKT graphs
 
