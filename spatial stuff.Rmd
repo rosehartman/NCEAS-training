@@ -1,0 +1,237 @@
+---
+title: "spatial stuff"
+author: "Rosemary Hartman"
+date: "11/8/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(ggmap)
+library(leaflet)
+library(scales)
+```
+
+# Prepare regions shapefile
+
+```{r}
+ak_regions = read_sf("shapefile_demo_data/ak_regions_simp.shp")
+
+plot(ak_regions)
+
+st_crs(ak_regions)
+class(ak_regions)
+
+```
+
+```{r}
+ak_regions_338 = ak_regions %>% 
+st_transform(crs = 3338)
+
+plot(ak_regions_338)
+
+#geomtry information carries no matter what operations you perform on it
+str(ak_regions_338)
+str(select(ak_regions_338, region))
+
+```
+
+
+
+# Prepare population data
+
+```{r}
+pop = read.csv("shapefile_demo_data/alaska_population.csv", stringsAsFactors = F)
+
+head(pop)
+class(pop)
+
+```
+Coerce our data frame to a sf file
+
+```{r}
+#we need to know the coordinate system. It's lat-long, so we know it
+#is an unprojected coordinate system. IDeally it says it in the metadata
+#but we'll just assume it is WGS1984
+popsf = st_as_sf(pop, 
+                 coords = c("lng", "lat"), #always x then y
+                 crs = 4326, remove = F) 
+#set remove = F to keep the origional lat long column
+#you can also grab the coordinates out of the projection later.
+
+st_crs(popsf)
+
+```
+
+
+
+# calculate population by region
+
+```{r}
+pop_joined = st_join(popsf, ak_regions_338, join = st_within)
+#this doesn't work because we are in different coordinate reference systems
+
+pop_3338 = popsf %>%
+  st_transform(crs = 3338)
+pop_joined = st_join(pop_3338, ak_regions_338, join = st_within)
+
+
+```
+
+```{r}
+pop_region = pop_joined %>%
+  as.data.frame() %>%
+  group_by(region) %>%
+  summarize(totalpop = sum(population))
+
+pop_region
+
+```
+
+```{r}
+pop_region_3338 = left_join(ak_regions_338, pop_region)
+```
+
+```{r}
+pop_mgmt = pop_region_3338 %>%
+  group_by(mgmt_area) %>%
+  summarise(total_pop = sum(totalpop))
+
+#the "summarize" function automatically takes the union of the features. 
+#to stop this you can say "do_union = F"
+
+plot(pop_mgmt["total_pop"])
+```
+
+```{r}
+rivers_3338 = read_sf("shapefile_demo_data/ak_rivers_simp.shp")
+
+st_crs(rivers_3338)
+
+#if the EPSG code is not defined you can google the "proj4string" thing.
+
+```
+
+
+
+# make maps
+
+```{r}
+ggplot() +
+  geom_sf(data =pop_region_3338, mapping =aes(fill = totalpop))+
+  geom_sf(data = pop_3338, size = 0.5)+
+  geom_sf(rivers_3338, mapping = aes(size = StrOrder), color = "black")+
+  scale_size(range = c(0.01, 0.2), guide = F)+
+  theme_bw() +
+  scale_fill_continuous(name = "Total Population", low = "khaki", 
+                        high = "firebrick", labels = comma)
+```
+
+Incorporate base maps using ggmap
+
+We need to transform our data to 3857 - pseudomercator
+
+```{r}
+pop_3857 = pop_3338 %>%
+  st_transform(crs = 3857)
+```
+
+A lot of web-based mapping systems are great for dirving directions but aren't great for accurate spatial computations
+
+```{r}
+# Define a function to fix the bbox to be in EPSG:3857
+# See https://github.com/dkahle/ggmap/issues/160#issuecomment-397055208
+ggmap_bbox_to_3857 <- function(map) {
+  if (!inherits(map, "ggmap")) stop("map must be a ggmap object")
+  # Extract the bounding box (in lat/lon) from the ggmap to a numeric vector, 
+  # and set the names to what sf::st_bbox expects:
+  map_bbox <- setNames(unlist(attr(map, "bb")), 
+                       c("ymin", "xmin", "ymax", "xmax"))
+  
+  # Coonvert the bbox to an sf polygon, transform it to 3857, 
+  # and convert back to a bbox (convoluted, but it works)
+  bbox_3857 <- st_bbox(st_transform(st_as_sfc(st_bbox(map_bbox, crs = 4326)), 3857))
+  
+  # Overwrite the bbox of the ggmap object with the transformed coordinates 
+  attr(map, "bb")$ll.lat <- bbox_3857["ymin"]
+  attr(map, "bb")$ll.lon <- bbox_3857["xmin"]
+  attr(map, "bb")$ur.lat <- bbox_3857["ymax"]
+  attr(map, "bb")$ur.lon <- bbox_3857["xmax"]
+  map
+}
+```
+
+```{r}
+#upper left, lower right, 
+bbox = c(-170, 52, -130, 64)
+ak_map = get_stamenmap(bbox, zoom = 4)
+ak_map_3857 = ggmap_bbox_to_3857(ak_map)
+
+```
+
+```{r}
+ggmap(ak_map_3857) +
+  geom_sf(data = pop_3857, aes(color = population), inherit.aes = F)
+```
+
+# Now make maps in leaflet
+
+leaflet automatically projects it for you
+
+```{r}
+epsg3338 <- leaflet::leafletCRS(
+  crsClass = "L.Proj.CRS",
+  code = "EPSG:3338",
+  proj4def =  "+proj=aea +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+  resolutions = 2^(16:7))
+```
+
+You need to give leaflet a crs and you need to give leaflet your data in 4326
+
+```{r}
+pop_region_4326 = pop_region_3338 %>%
+  st_transform(crs = 4326)
+
+pop_4326 = pop_3338 %>%
+  st_transform(crs = 4326)
+```
+
+```{r}
+leaflet(options = leafletOptions(crs = epsg3338)) %>%
+  addPolygons(data = pop_region_4326, fillColor = "gray", weight = 1)
+```
+
+
+```{r}
+pal <- colorNumeric(palette = "Reds", domain = pop_region_4326$totalpop)
+
+m <- leaflet(options = leafletOptions(crs = epsg3338)) %>%
+        addPolygons(data = pop_region_4326, 
+                    fillColor = ~pal(totalpop),
+                    weight = 1,
+                    color = "black",
+                    fillOpacity = 1,
+                    label = ~region) %>% 
+    addCircleMarkers(data = pop_4326,
+                         lat = ~lat,
+                         lng = ~lng,
+                         radius = ~log(population/500), # arbitrary scaling
+                         fillColor = "gray",
+                         fillOpacity = 1,
+                         weight = 0.25,
+                         color = "black",
+                         label = ~paste0(pop_4326$city, ", population ", comma(pop_4326$population))) %>%
+        addLegend(position = "bottomleft",
+                  pal = pal,
+                  values = range(pop_region_4326$totalpop),
+                  title = "Total Population")
+
+m
+```
+
